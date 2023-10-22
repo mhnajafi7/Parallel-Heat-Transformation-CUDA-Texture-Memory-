@@ -13,11 +13,9 @@
 
 // ===========================> Functions Prototype <===============================
 void fill(float* data, int size);
-double calc_mse(float* data1, float* data2, int size);
-void cpuKernel_yx(const float* const a, const float* const b, float* c, const int m, const int n, const int y, const int x);
-void cpuKernel_y(const float* const a, const float* const b, float* c, const int m, const int n, const int y);
-void cpuKernel(const float* const a, const float* const b, float* c, const int m, const int n);
-void gpuKernel(const float* const a, const float* const b, float* c, const int m, const int n, double* gpu_kernel_time);
+double calc_mse (float* data1, float* data2, int size);
+void cpuKernel(const float* const a,float* c, const int m, const int n);
+void gpuKernel(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time);
 // =================================================================================
 
 int main(int argc, char** argv) {
@@ -54,12 +52,8 @@ int main(int argc, char** argv) {
 		
 	// check correctness of GPU calculations against CPU
 	double mse = 0.0;
-	if (m<=10) {
-		mse += calc_mse( c_serial, c, n*n );
-	} else {
-		mse += calc_mse( c_serial          , c          , n ); // first row
-		mse += calc_mse( c_serial + n*(n-1), c + n*(n-1), n ); // last row
-	}
+	mse += calc_mse( c_serial, c, n );
+
 
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
@@ -71,7 +65,7 @@ int main(int argc, char** argv) {
    
 	return 0;
 }
-//-----------------------------------------------------------------------------
+
 void fill(float* data, int size) {
     for (int i=0; i<size; ++i)
         data[i] = (float) (rand() % 11 + 20);
@@ -91,42 +85,38 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
     for(int i = 0; i < n ; i++){
         float newTemp = a[i];
         if(i==0)
-            newTemp += k * ( a[i+1] - a[i] );
+            newTemp += k_const * ( a[i+1] - a[i] );
         else if(i==n-1)
-            newTemp += k * ( a[i-1] - a[i] );
+            newTemp += k_const * ( a[i-1] - a[i] );
         else
-            newTemp += k * ( a[i+1] + a[i-1] - 2 * a[i] );
+            newTemp += k_const * ( a[i+1] + a[i-1] - 2 * a[i] );
         c[i] = newTemp;
     }
 }
 
 
 //-----------------------------------------------------------------------------
-void gpuKernel(const float* const a, const float* const b, float* c, const int m, const int n, double* gpu_kernel_time) {
+void gpuKernel(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
 
 	float* ad;
-	float* bd;
 	float* cd;
 
-    HANDLE_ERROR(cudaMalloc((void**)&ad, n*n * sizeof(float)));
-    HANDLE_ERROR(cudaMalloc((void**)&bd, n*n * sizeof(float)));
-    HANDLE_ERROR(cudaMalloc((void**)&cd, n*n * sizeof(float)));
+    HANDLE_ERROR(cudaMalloc((void**)&ad, n * sizeof(float)));
+    HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n*n * sizeof(float), cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(bd, b, n*n * sizeof(float), cudaMemcpyHostToDevice));
 
-	dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
-	dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
+	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
+	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
 	GpuTimer timer;
     timer.Start();
-	kernelFunc<<< dimGrid,dimBlock >>>(ad, bd, cd, m, n); //modify this function in bmm.cu
+	kernelFunc<<< (16),(1024) >>>(ad , cd, m, n); //modify this function in bmm.cu
 	timer.Stop();
 	*gpu_kernel_time = timer.Elapsed();
     
-	HANDLE_ERROR(cudaMemcpy(c, cd, n*n * sizeof(float), cudaMemcpyDeviceToHost));
+	HANDLE_ERROR(cudaMemcpy(c, cd, n * sizeof(float), cudaMemcpyDeviceToHost));
 
     HANDLE_ERROR(cudaFree(ad));
-    HANDLE_ERROR(cudaFree(bd));
     HANDLE_ERROR(cudaFree(cd));
 }
