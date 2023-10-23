@@ -4,9 +4,10 @@
 #include "htt.h"
 
 #define tx threadIdx.x
-
-
 #define bx blockIdx.x
+
+
+
 
 // you may define other parameters here!
 // you may define other macros here!
@@ -27,9 +28,15 @@ __global__ void kernelFunc(const float* oldtemperature,float* newtemperature, co
 
 	int right = offset + 1;
 	int left  = offset - 1;
-
 	if(x == 0)	left++;
 	if(x == N - 1)	right--;
 
-	newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
+	float l,r,ce;
+	l = tex1Dfetch(texref,left);
+	r = tex1Dfetch(texref,right);
+	ce = tex1Dfetch(texref,offset);
+
+	newtemperature[offset] = ce + k_const * (r + l - 2 * ce);
+
+	//newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
 }

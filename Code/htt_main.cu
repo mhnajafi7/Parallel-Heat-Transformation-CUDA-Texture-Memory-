@@ -4,9 +4,11 @@
 #include <time.h>
 #include <stdlib.h>
 #include <math.h>
+#include "cstdlib"
+#include "ctime"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-
+#include "iostream"
 #include "gputimer.h"
 #include "gpuerrors.h"
 #include "htt.h"
@@ -38,7 +40,7 @@ int main(int argc, char** argv) {
 	c        = (float*)malloc(n * sizeof(float));
 	
 	// fill a, b matrices with random values between -16.0f and 16.0f
-	srand(0);
+	srand(static_cast<unsigned int>(time(0)));
 	fill(a, n);
 
 	// CPU calculations
@@ -57,7 +59,9 @@ int main(int argc, char** argv) {
 
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
-		
+
+	for (int i=0; i<n; ++i)
+        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);
@@ -67,8 +71,12 @@ int main(int argc, char** argv) {
 }
 
 void fill(float* data, int size) {
-    for (int i=0; i<size; ++i)
-        data[i] = (float) (rand() % 11 + 20);
+
+    for (int i=0; i<size; ++i){
+        int randomInt = rand();
+		float randomFloat = 20.0f +(randomInt / (RAND_MAX + 1.0f)) * 10.0f;
+		data[i] = randomFloat;
+	}
 }
 
 double calc_mse (float* data1, float* data2, int size) {
@@ -101,11 +109,12 @@ void gpuKernel(const float* const a, float* c, const int m, const int n, double*
 	float* ad;
 	float* cd;
 
+
     HANDLE_ERROR(cudaMalloc((void**)&ad, n * sizeof(float)));
     HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
-
+	HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
@@ -116,6 +125,7 @@ void gpuKernel(const float* const a, float* c, const int m, const int n, double*
 	*gpu_kernel_time = timer.Elapsed();
     
 	HANDLE_ERROR(cudaMemcpy(c, cd, n * sizeof(float), cudaMemcpyDeviceToHost));
+	//cudaUnbindTexture(texref);
 
     HANDLE_ERROR(cudaFree(ad));
     HANDLE_ERROR(cudaFree(cd));
