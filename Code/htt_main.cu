@@ -104,14 +104,14 @@ void gpuKernel(const float* const a, float* c, const int m, const int n, double*
     HANDLE_ERROR(cudaMalloc((void**)&ad, n * sizeof(float)));
     HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
 
-    HANDLE_ERROR(cudaMemcpy(ad, a, n*n * sizeof(float), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
 
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
 	GpuTimer timer;
     timer.Start();
-	kernelFunc<<< (16),(1024) >>>(ad , cd, m, n); //modify this function in bmm.cu
+	kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
 	timer.Stop();
 	*gpu_kernel_time = timer.Elapsed();
     

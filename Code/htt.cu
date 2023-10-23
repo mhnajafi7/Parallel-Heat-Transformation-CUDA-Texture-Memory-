@@ -20,7 +20,7 @@ dim3 getDimBlock(const int m, const int n) {
         return dimBlock;
 }*/
 //-----------------------------------------------------------------------------
-void gpuKernel(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
+__global__ void kernelFunc(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
 {
 	int x = tx + bx * blockDim.x;
 	int offset = x;
