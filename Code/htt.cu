@@ -23,6 +23,7 @@ dim3 getDimBlock(const int m, const int n) {
 //-----------------------------------------------------------------------------
 __global__ void kernelFunc(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
 {
+
 	int x = tx + bx * blockDim.x;
 	int offset = x;
 
@@ -31,12 +32,18 @@ __global__ void kernelFunc(const float* oldtemperature,float* newtemperature, co
 	if(x == 0)	left++;
 	if(x == N - 1)	right--;
 
-	float l,r,ce;
-	l = tex1Dfetch(texref,left);
-	r = tex1Dfetch(texref,right);
+	float le,ri,ce;
+	le = tex1Dfetch(texref,left);
+	ri = tex1Dfetch(texref,right);
 	ce = tex1Dfetch(texref,offset);
 
-	newtemperature[offset] = ce + k_const * (r + l - 2 * ce);
+	newtemperature[offset] = ce + k_const * (ri + le - 2 * ce);
 
 	//newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
+}
+
+void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
+	/*HANDLE_ERROR(*/cudaBindTexture(NULL, texref, ad, N * sizeof(float))/*)*/;
+	kernelFunc<<< (16),(1024) >>>(ad , cd, N, M);
+
 }

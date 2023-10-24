@@ -17,7 +17,7 @@
 void fill(float* data, int size);
 double calc_mse (float* data1, float* data2, int size);
 void cpuKernel(const float* const a,float* c, const int m, const int n);
-void gpuKernel(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time);
+void gpuKernels(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time);
 // =================================================================================
 
 int main(int argc, char** argv) {
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 	// GPU calculations
 	double gpu_kernel_time = 0.0;
 	clock_t t1 = clock(); 
-	gpuKernel (a,c, m, n, &gpu_kernel_time);
+	gpuKernels (a,c, m, n, &gpu_kernel_time);
     clock_t t2 = clock(); 
 		
 	// check correctness of GPU calculations against CPU
@@ -60,8 +60,8 @@ int main(int argc, char** argv) {
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
 
-	for (int i=0; i<n; ++i)
-        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	
+	/*for (int i=0; i<n; ++i)
+        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	*/
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);
@@ -104,7 +104,7 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
 
 
 //-----------------------------------------------------------------------------
-void gpuKernel(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
+void gpuKernels(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
 
 	float* ad;
 	float* cd;
@@ -114,13 +114,15 @@ void gpuKernel(const float* const a, float* c, const int m, const int n, double*
     HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
+	HANDLE_ERROR(cudaMemcpy(cd, c, n * sizeof(float), cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
 	GpuTimer timer;
     timer.Start();
-	kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
+	gpuKernel(ad,cd,n,m);
+	//kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
 	timer.Stop();
 	*gpu_kernel_time = timer.Elapsed();
     
