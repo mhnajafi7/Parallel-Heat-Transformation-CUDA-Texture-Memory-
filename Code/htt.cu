@@ -32,18 +32,12 @@ __global__ void kernelFunc(const float* oldtemperature,float* newtemperature, co
 	if(x == 0)	left++;
 	if(x == N - 1)	right--;
 
-	float le,ri,ce;
-	le = tex1Dfetch(texref,left);
-	ri = tex1Dfetch(texref,right);
-	ce = tex1Dfetch(texref,offset);
-
-	newtemperature[offset] = ce + k_const * (ri + le - 2 * ce);
-
-	//newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
+	
+	newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
 }
 
 void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
-	/*HANDLE_ERROR(*/cudaBindTexture(NULL, texref, ad, N * sizeof(float))/*)*/;
+
 	kernelFunc<<< (16),(1024) >>>(ad , cd, N, M);
 
 }
