@@ -35,13 +35,13 @@ int main(int argc, char** argv) {
 	float* a;
 	float* c_serial;
 	float* c;
-	a        = (float*)malloc(n * sizeof(float));
-	c_serial = (float*)malloc(n * sizeof(float));
-	c        = (float*)malloc(n * sizeof(float));
+	a        = (float*)malloc(n*n * sizeof(float));
+	c_serial = (float*)malloc(n*n * sizeof(float));
+	c        = (float*)malloc(n*n * sizeof(float));
 	
 	// fill a, b matrices with random values between -16.0f and 16.0f
 	srand(static_cast<unsigned int>(time(0)));
-	fill(a, n);
+	fill(a, n*n);
 
 	// CPU calculations
 	cpuKernel (a,c_serial, m, n);
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 		
 	// check correctness of GPU calculations against CPU
 	double mse = 0.0;
-	mse += calc_mse( c_serial, c, n );
+	mse += calc_mse( c_serial, c, n*n );
 
 
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
@@ -91,15 +91,34 @@ double calc_mse (float* data1, float* data2, int size) {
 //-----------------------------------------------------------------------------
 void cpuKernel(const float* const a,float* c, const int m, const int n) { // entire matrix
     for(int i = 0; i < n ; i++){
-        float newTemp = a[i];
-        if(i==0)
-            newTemp += k_const * ( a[i+1] - a[i] );
-        else if(i==n-1)
-            newTemp += k_const * ( a[i-1] - a[i] );
-        else
-            newTemp += k_const * ( a[i+1] + a[i-1] - 2 * a[i] );
-        c[i] = newTemp;
-    }
+    
+		for(int j = 0; j < n ; j++){
+
+			float newTemp = a[i][j];
+			int rt,lt,cr,up,dn;
+			
+			rt = (i)* n + (j + 1);	//right
+			lt = (i)* n + (j - 1);	//left
+			cr = (i)* n + (j);		//center
+			up = (i - 1)* n + (j);	//up
+			dn = (i + 1)* n + (j);	//down
+			
+
+			if(i==0)
+				if(j=0)
+					newTemp += k_const * ( a[i+1] - a[i] );
+				else
+					newTemp += k_const * ( a[i+1] - a[i] );
+			else if(i==n-1)
+				newTemp += k_const * ( a[i-1] - a[i] );
+			else
+				
+				
+			newTemp += k_const * ( a[i+1][j] + a[i-1][j] + a[i][j-1] + a[i][j+1] - 4 * a[i][j] );
+			c[i][j] = newTemp;
+		
+		}
+	}
 }
 
 
