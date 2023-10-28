@@ -104,14 +104,21 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
 			dn = (i + 1)* n + (j);	//down
 			
 
-			if(i==0)
-				if(j=0)
-					newTemp += k_const * ( a[i+1] - a[i] );
-				else
-					newTemp += k_const * ( a[i+1] - a[i] );
-			else if(i==n-1)
-				newTemp += k_const * ( a[i-1] - a[i] );
-			else
+			if(i==0){
+				up = cr;
+				if(j==0)
+					lt = cr;
+				else if(j==n-1)
+					rt = cr;
+		
+			}else if(i==n-1){
+				dn = cr;
+				if(j==0)
+					lt = cr;
+				else if(j==n-1)
+					rt = cr;
+				
+			}else
 				
 				
 			newTemp += k_const * ( a[i+1][j] + a[i-1][j] + a[i][j-1] + a[i][j+1] - 4 * a[i][j] );
