@@ -97,24 +97,22 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
 			float newTemp = a[i][j];
 			int rt,lt,cr,up,dn;
 			
-			rt = (i)* n + (j + 1);	//right
-			lt = (i)* n + (j - 1);	//left
-			cr = (i)* n + (j);		//center
-			up = (i - 1)* n + (j);	//up
-			dn = (i + 1)* n + (j);	//down
+			rt = a[i][j + 1];	//right
+			lt = a[i][j - 1];	//left
+			cr = a[i][j];		//center
+			up = a[i - 1][j];	//up
+			dn = a[i + 1][j];	//down
 			
 
-			if(i==0)
-				if(j=0)
-					newTemp += k_const * ( a[i+1] - a[i] );
-				else
-					newTemp += k_const * ( a[i+1] - a[i] );
-			else if(i==n-1)
-				newTemp += k_const * ( a[i-1] - a[i] );
-			else
-				
-				
-			newTemp += k_const * ( a[i+1][j] + a[i-1][j] + a[i][j-1] + a[i][j+1] - 4 * a[i][j] );
+			if(i==0)	up = cr;
+			if(i==n-1)	dn = cr;
+			if(j==0)	lt = cr;
+			if(j==n-1)	rt = cr;
+
+			
+			
+			newTemp += k_const * ( rt + lt + up + dn - 4 * a[i][j] );
+			
 			c[i][j] = newTemp;
 		
 		}
