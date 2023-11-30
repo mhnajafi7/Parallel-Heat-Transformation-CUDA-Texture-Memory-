@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
 	c_serial = (float*)malloc(n*n * sizeof(float));
 	c        = (float*)malloc(n*n * sizeof(float));
 	
-	// fill a, b matrices with random values between -16.0f and 16.0f
-	srand(static_cast<unsigned int>(time(0)));
+	// fill a, b matrices with random values between 20.0f and 30.0f
+	srand(0); // If you really want ranodm nubmers, change it like: srand(static_cast<unsigned int>(time(0)));
 	fill(a, n*n);
 
 	// CPU calculations
@@ -57,11 +57,23 @@ int main(int argc, char** argv) {
 	mse += calc_mse( c_serial, c, n*n );
 
 
-	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
-	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
+	/*printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
+	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);*/
 
-	/*for (int i=0; i<n; ++i)
-        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	*/
+	for(int i = 0; i < n ; i++){
+    	for(int j = 0; j < n ; j++){
+        printf("%.1f\t",a[i*n+j]);	
+		}
+		printf("\n");	
+	}
+	printf("*************************** \n");
+
+	for(int i = 0; i < n ; i++){
+    	for(int j = 0; j < n ; j++){
+        printf("%.1f\t",c_serial[i*n+j]);	
+		}
+		printf("\n");	
+	}
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);
@@ -94,14 +106,15 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
     
 		for(int j = 0; j < n ; j++){
 
-			float newTemp = a[i][j];
+			float newTemp = a[i*n+j];
 			int rt,lt,cr,up,dn;
 			
-			rt = a[i][j + 1];	//right
-			lt = a[i][j - 1];	//left
-			cr = a[i][j];		//center
-			up = a[i - 1][j];	//up
-			dn = a[i + 1][j];	//down
+			rt = a[i*n+(j + 1)];	//right
+			lt = a[i*n+(j - 1)];	//left
+			cr = a[i*n+j];		//center
+			up = a[(i - 1)*n+j];	//up
+			dn = a[(i + 1)*n+j];	//down
+				
 			
 
 			if(i==0)	up = cr;
@@ -111,9 +124,9 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
 
 			
 			
-			newTemp += k_const * ( rt + lt + up + dn - 4 * a[i][j] );
+			newTemp += k_const * ( rt + lt + up + dn - 4 * newTemp );
 			
-			c[i][j] = newTemp;
+			c[i*n+j] = newTemp;
 		
 		}
 	}
@@ -132,7 +145,7 @@ void gpuKernels(const float* const a, float* c, const int m, const int n, double
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaMemcpy(cd, c, n * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
+	// HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 

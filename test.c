@@ -1,56 +1,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define k_const 0.1f
-
+#define n 4
 void fill(float* data) {
-    data[0]=23;   data[1]=10;   data[2]=34;   data[3]=52;   data[4]=9;
-    data[5]=17;   data[6]=13;   data[7]=96;   data[8]=32;   data[9]=71;
-    data[10]=3;   data[11]=65;  data[12]=99;  data[13]=74;  data[14]=33;
+    data[0] =28.4;   data[1] =23.9;   data[2] =27.8;   data[3] =28.0;   
+    data[4] =29.1;   data[5] =22.0;   data[6] =23.4;   data[7] =27.7;   
+    data[8] =22.8;   data[9] =25.5;   data[10]=24.8;   data[11]=26.3;  
+    data[12]=23.6;   data[13]=25.1;   data[14]=29.5;   data[15]=29.2;  
 }
 
 
 int main(){
     float* a;
     float* c;
-    a = (float*)malloc(3*5*sizeof(float));
-    c = (float*)malloc(3*5*sizeof(float));
+    
+    a = (float*)malloc(n*n*sizeof(float));
+    c = (float*)malloc(n*n*sizeof(float));
     fill(a);
-    //float a[3][5 ] ={ { 23, 10, 34, 52, 9 } , { 17, 13, 96, 32, 71 }, { 3, 65, 99, 74, 33 } };
-	//float c[3][5];
     int rt,lt,cr,up,dn;
-    for(int k = 0; k < 2 ; k++){		
+    for(int k = 0; k < 1 ; k++){		
 		
-		for(int i = 0; i < 3 ; i++){
+		for(int i = 0; i < n ; i++){
 		
-			for(int j = 0; j < 5 ; j++){
-				float newTemp = a[i*5+j];
+			for(int j = 0; j < n ; j++){
+				float newTemp = a[i*n+j];
 				 
-				rt = a[i*5+(j + 1)];	//right
-				lt = a[i*5+(j - 1)];	//left
-				cr = a[i*4+j];		//center
-				up = a[(i - 1)*5+j];	//up
-				dn = a[(i + 1)*5+j];	//down
+				rt = a[i*n+(j + 1)];	//right
+				lt = a[i*n+(j - 1)];	//left
+				cr = a[i*n+j];		//center
+				up = a[(i - 1)*n+j];	//up
+				dn = a[(i + 1)*n+j];	//down
 				
 				if(i==0)	up = cr;
-				if(i==2)	dn = cr;
+				if(i==n-1)	dn = cr;
 				if(j==0)	lt = cr;
-				if(j==4)	rt = cr;
+				if(j==n-1)	rt = cr;
 
-				newTemp += k_const * ( rt + lt + up + dn - 4 * a[i*5+j] );
-				c[i*5+j] = newTemp;
+				newTemp += k_const * ( rt + lt + up + dn - 4 * newTemp );
+				c[i*n+j] = newTemp;
 			}
 		}
 
-	//	for(int i = 0; i < 3 ; i++){		
-	//		for(int j = 0; j <5 ; j++){
-	//			a[i*5+j] = c[i][j];
-	//		}
-	//	}
+		for(int i = 0; i < n ; i++){		
+			for(int j = 0; j <n ; j++){
+				a[i*n+j] = c[i*n+j];
+			}
+		}
 	}
-    for(int i = 0; i < 3 ; i++){
+    for(int i = 0; i < n ; i++){
     
-		for(int j = 0; j < 5 ; j++){
-		    printf("%.1f  ",c[i*5+j]);
+		for(int j = 0; j < n ; j++){
+		    printf("%.1f  ",a[i*n+j]);
 		}
 		
         printf("\n");
