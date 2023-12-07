@@ -35,13 +35,13 @@ int main(int argc, char** argv) {
 	float* a;
 	float* c_serial;
 	float* c;
-	a        = (float*)malloc(n * sizeof(float));
-	c_serial = (float*)malloc(n * sizeof(float));
-	c        = (float*)malloc(n * sizeof(float));
+	a        = (float*)malloc(n*n * sizeof(float));
+	c_serial = (float*)malloc(n*n * sizeof(float));
+	c        = (float*)malloc(n*n * sizeof(float));
 	
-	// fill a, b matrices with random values between -16.0f and 16.0f
-	srand(static_cast<unsigned int>(time(0)));
-	fill(a, n);
+	// fill a, b matrices with random values between 20.0f and 30.0f
+	srand(0); // If you really want ranodm nubmers, change it like: srand(static_cast<unsigned int>(time(0)));
+	fill(a, n*n);
 
 	// CPU calculations
 	cpuKernel (a,c_serial, m, n);
@@ -54,14 +54,34 @@ int main(int argc, char** argv) {
 		
 	// check correctness of GPU calculations against CPU
 	double mse = 0.0;
-	mse += calc_mse( c_serial, c, n );
+	mse += calc_mse( c_serial, c, n*n );
 
 
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
 
-	/*for (int i=0; i<n; ++i)
-        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	*/
+	for(int i = 0; i < n*n ; i++){
+        printf("%.1f\t",a[i]);	
+		if ( (i+1) % n == 0)
+			printf("\n");	
+	}
+
+	printf("*************************** \n");
+
+	for(int i = 0; i < n*n ; i++){
+        printf("%.1f\t",c_serial[i]);
+		if ( (i+1) % n == 0)
+			printf("\n");	
+		
+	}
+
+	printf("*************************** \n");
+
+	for(int i = 0; i < n*n ; i++){
+        printf("%.1f\t",c[i]);	
+		if ( (i+1) % n ==0)
+			printf("\n");
+	}
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);
@@ -91,15 +111,33 @@ double calc_mse (float* data1, float* data2, int size) {
 //-----------------------------------------------------------------------------
 void cpuKernel(const float* const a,float* c, const int m, const int n) { // entire matrix
     for(int i = 0; i < n ; i++){
-        float newTemp = a[i];
-        if(i==0)
-            newTemp += k_const * ( a[i+1] - a[i] );
-        else if(i==n-1)
-            newTemp += k_const * ( a[i-1] - a[i] );
-        else
-            newTemp += k_const * ( a[i+1] + a[i-1] - 2 * a[i] );
-        c[i] = newTemp;
-    }
+    
+		for(int j = 0; j < n ; j++){
+
+			float newTemp = a[i*n+j];
+			int rt,lt,cr,up,dn;
+			
+			rt = a[i*n+(j + 1)];	//right
+			lt = a[i*n+(j - 1)];	//left
+			cr = a[i*n+j];		//center
+			up = a[(i - 1)*n+j];	//up
+			dn = a[(i + 1)*n+j];	//down
+				
+			
+
+			if(i==0)	up = cr;
+			if(i==n-1)	dn = cr;
+			if(j==0)	lt = cr;
+			if(j==n-1)	rt = cr;
+
+			
+			
+			newTemp += k_const * ( rt + lt + up + dn - 4 * newTemp );
+			
+			c[i*n+j] = newTemp;
+		
+		}
+	}
 }
 
 
@@ -114,15 +152,10 @@ void gpuKernels(const float* const a, float* c, const int m, const int n, double
     HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaMemcpy(cd, c, n * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
-	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
-	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
 	GpuTimer timer;
     timer.Start();
 	gpuKernel(ad,cd,n,m);
-	//kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
 	timer.Stop();
 	*gpu_kernel_time = timer.Elapsed();
     

@@ -1,43 +1,27 @@
-//ONLY MODIFY THIS FILE!
-//YOU CAN MODIFY EVERYTHING IN THIS FILE!
-
 #include "htt.h"
 
 #define tx threadIdx.x
 #define bx blockIdx.x
+#define ty threadIdx.y
+#define by blockIdx.y
+#define tl N
 
-
-
-
-// you may define other parameters here!
-// you may define other macros here!
-// you may define other functions here!
-/*dim3 getDimGrid(const int m, const int n) {
-        dim3 dimGrid(1);
-        return dimGrid;
-}
-dim3 getDimBlock(const int m, const int n) {
-        dim3 dimBlock(1024);
-        return dimBlock;
-}*/
 //-----------------------------------------------------------------------------
-__global__ void kernelFunc(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
+__global__ void kernelFunc(float* newtemperature, const float* oldtemperature, const unsigned int N)
 {
+    int col = tx + bx * tl;
+    int row = ty + by * tl;
+    int index = row * N + col;
 
-	int x = tx + bx * blockDim.x;
-	int offset = x;
-
-	int right = offset + 1;
-	int left  = offset - 1;
-	if(x == 0)	left++;
-	if(x == N - 1)	right--;
-
-	
-	newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
+    if (row < N && col < N) {
+    newtemperature[index] = oldtemperature[index];
+    }
 }
 
-void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
+void gpuKernel(const float* ad, float* cd, const unsigned int N, const unsigned int M)
+{
+    dim3 blockSize(tl, tl);  // Adjust block size as needed
+    dim3 gridSize((N+tl-1)/tl, (N+tl-1)/tl);
 
-	kernelFunc<<< (16),(1024) >>>(ad , cd, N, M);
-
+    kernelFunc<<<gridSize, blockSize>>>(cd, ad, N);
 }
