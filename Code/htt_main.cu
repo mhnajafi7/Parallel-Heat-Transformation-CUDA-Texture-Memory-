@@ -44,7 +44,9 @@ int main(int argc, char** argv) {
 	fill(a, n);
 
 	// CPU calculations
+	clock_t cput1 = clock();
 	cpuKernel (a,c_serial, m, n);
+	clock_t cput2 = clock();
 		
 	// GPU calculations
 	double gpu_kernel_time = 0.0;
@@ -57,8 +59,8 @@ int main(int argc, char** argv) {
 	mse += calc_mse( c_serial, c, n );
 
 
-	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
-	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
+	printf("m=%d n=%d CPU=%g ms GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
+	m, n, (cput2-cput1)/1000.0, (t2-t1)/1000.0, gpu_kernel_time, mse);
 
 	/*for (int i=0; i<n; ++i)
         printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	*/
@@ -89,7 +91,7 @@ double calc_mse (float* data1, float* data2, int size) {
 	return mse;
 }
 //-----------------------------------------------------------------------------
-void cpuKernel(const float* const a,float* c, const int m, const int n) { // entire matrix
+void cpuKernel(const float* const a,float* c, const int m, const int n) { // entire matrix 
     for(int i = 0; i < n ; i++){
         float newTemp = a[i];
         if(i==0)
@@ -100,6 +102,7 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
             newTemp += k_const * ( a[i+1] + a[i-1] - 2 * a[i] );
         c[i] = newTemp;
     }
+ 
 }
 
 
@@ -115,7 +118,7 @@ void gpuKernels(const float* const a, float* c, const int m, const int n, double
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaMemcpy(cd, c, n * sizeof(float), cudaMemcpyHostToDevice));
-	HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
+	//HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
