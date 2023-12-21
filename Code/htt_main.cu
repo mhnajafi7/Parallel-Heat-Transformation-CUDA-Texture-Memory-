@@ -145,23 +145,20 @@ void cpuKernel(const float* const a,float* c, const int m, const int n) { // ent
 void gpuKernels(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
 
 	float* ad;
-	float* cd;
-
 
     HANDLE_ERROR(cudaMalloc((void**)&ad, n * sizeof(float)));
-    HANDLE_ERROR(cudaMalloc((void**)&cd, n * sizeof(float)));
-
     HANDLE_ERROR(cudaMemcpy(ad, a, n * sizeof(float), cudaMemcpyHostToDevice));
 
-	GpuTimer timer;
-    timer.Start();
-	gpuKernel(ad,cd,n,m);
-	timer.Stop();
-	*gpu_kernel_time = timer.Elapsed();
+	//GpuTimer timer;
+    //timer.Start();                                                     
+	//gpuKernel(ad,n,m);
+	//timer.Stop();
+	//*gpu_kernel_time = timer.Elapsed();
     
-	HANDLE_ERROR(cudaMemcpy(c, cd, n * sizeof(float), cudaMemcpyDeviceToHost));
+	HANDLE_ERROR(cudaMemcpy(c, ad, n * sizeof(float), cudaMemcpyDeviceToHost));
+	
+
 	//cudaUnbindTexture(texref);
 
     HANDLE_ERROR(cudaFree(ad));
-    HANDLE_ERROR(cudaFree(cd));
 }
