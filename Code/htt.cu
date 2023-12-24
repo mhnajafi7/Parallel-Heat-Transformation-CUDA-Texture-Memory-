@@ -1,37 +1,48 @@
-//ONLY MODIFY THIS FILE!
-//YOU CAN MODIFY EVERYTHING IN THIS FILE!
-
 #include "htt.h"
 
 #define tx threadIdx.x
 #define bx blockIdx.x
-
-#define tilex 1
-#define tiley 1
-
-
-// you may define other parameters here!
-// you may define other macros here!
-// you may define other functions here!
-
+#define ty threadIdx.y
+#define by blockIdx.y
+#define tl 16
+texture<float,cudaTextureType1D,cudaReadModeElementType> texref;
 //-----------------------------------------------------------------------------
-__global__ void kernelFunc(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
+__global__ void kernelFunc(float* newtemperature, const float* oldtemperature, const unsigned int N)
 {
+    int col = tx + bx * tl;
+    int row = ty + by * tl;
+    int index = col + row * blockDim.x * gridDim.x;
 
-	int x = tx + bx * blockDim.x;
-	int offset = x;
 
-	int right = offset + 1;
-	int left  = offset - 1;
-	if(x == 0)	left++;
-	if(x == N - 1)	right--;
+	int left = index - 1;
+    int right = index + 1;
+    if (col == 0) left++;
+    if (col == N-1) right--;
 
-	
-	newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
+    int top = index - N;
+    int bottom = index + N;
+    if (row == 0) top += N;
+    if (row == N-1) bottom -= N;
+
+    float r = tex1Dfetch(texref,right);
+	float l = tex1Dfetch(texref,left);
+	float c = tex1Dfetch(texref,index);
+    float t = tex1Dfetch(texref,top);
+    float b = tex1Dfetch(texref,bottom);
+	// using texture memory
+	 newtemperature[index] = c + k_const * (r + l + t + b - 4 * c);
+	// linear mode 
+	//newtemperature[index] = oldtemperature[index] + k_const * (oldtemperature[left] + oldtemperature[right] + oldtemperature[top] + oldtemperature[bottom]- 4 * oldtemperature[index] );
+
 }
 
-void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
+void gpuKernel(const float* ad, float* cd, const unsigned int N, const unsigned int M)
+{
+    dim3 blockSize(tl, tl);  // Adjust block size as needed
+    dim3 gridSize((N+tl-1)/tl, (N+tl-1)/tl);
 
-	kernelFunc<<< (16),(1024) >>>(ad , cd, N, M);
+    cudaBindTexture(NULL, texref, ad, N * N * sizeof(float));
+	
+   	kernelFunc<<<gridSize, blockSize>>>(cd, ad, N);
 
 }
