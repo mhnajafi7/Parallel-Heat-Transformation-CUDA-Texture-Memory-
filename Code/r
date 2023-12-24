@@ -1,0 +1,4 @@
+#!/bin/bash
+
+nvcc -O2 htt_main.cu htt.cu -o htt
+
