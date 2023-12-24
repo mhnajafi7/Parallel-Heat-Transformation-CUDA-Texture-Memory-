@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "d:/najafi/uni/git/Parallel heat/D2T1/Parallel-Heat-Transformation-CUDA-Texture-Memory-",
-      "program": "d:/najafi/uni/git/Parallel heat/D2T1/Parallel-Heat-Transformation-CUDA-Texture-Memory-/build/Debug/outDebug",
+      "cwd": "d:/najafi/uni/git/Parallel heat/D2T1/Parallel-Heat-Transformation-CUDA-Texture-Memory-/Code",
+      "program": "d:/najafi/uni/git/Parallel heat/D2T1/Parallel-Heat-Transformation-CUDA-Texture-Memory-/Code/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
