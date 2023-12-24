@@ -62,8 +62,8 @@ int main(int argc, char** argv) {
 	printf("m=%d n=%d CPU=%g ms GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (cput2-cput1)/1000.0, (t2-t1)/1000.0, gpu_kernel_time, mse);
 
-	/*for (int i=0; i<n; ++i)
-        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	*/
+	for (int i=0; i<n; ++i)
+        printf("a=%f c_parallel=%f c_serial=%f\n",a[i],c[i],c_serial[i]);	
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);

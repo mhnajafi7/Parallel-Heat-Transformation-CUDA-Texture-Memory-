@@ -45,6 +45,6 @@ __global__ void kernelFunc(float* newtemperature,const float* oldtemperature, co
 
 void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
 	cudaBindTexture(NULL, texref, ad, N * sizeof(float));
-	kernelFunc<<< (4096),(1024) >>>(cd,ad, N);	// for m = 22
+	kernelFunc<<< (1),(1024) >>>(cd,ad, N);	// for m = 22
 
 }
