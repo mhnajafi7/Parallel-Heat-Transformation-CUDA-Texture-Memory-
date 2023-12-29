@@ -41,7 +41,10 @@ int main(int argc, char** argv) {
 	c_serial = (float*)malloc(n*n * sizeof(float));
 	c        = (float*)malloc(n*n * sizeof(float));
 	temp     = (float*)malloc(n*n * sizeof(float));
+<<<<<<< HEAD
 	
+=======
+>>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
 	// fill a, b matrices with random values between 20.0f and 30.0f
 	srand(0); // If you really want ranodm nubmers, change it like: srand(static_cast<unsigned int>(time(0)));
 	fill(a, n*n);
@@ -89,7 +92,8 @@ int main(int argc, char** argv) {
 	free(a);
 	free(c_serial);
 	free(c);
-   
+	free(temp);
+
 	return 0;
 }
 
@@ -115,7 +119,33 @@ double calc_mse (float* data1, float* data2, int size) {
 void cpuKernel(const float* const a,float* c, float* temp, const int m, const int n) { // entire matrix
 	for(int i = 0; i < n ; i++){
 		for(int j = 0; j < n ; j++){
+<<<<<<< HEAD
 			c[i*n+j] = a[i*n+j];
+=======
+
+			float newTemp = a[i*n+j];
+			int rt,lt,cr,up,dn;
+			
+			rt = i*n+(j + 1);	//right
+			lt = i*n+(j - 1);	//left
+			cr = i*n+j;		//center
+			up = (i - 1)*n+j;	//up
+			dn = (i + 1)*n+j;	//down
+				
+			
+
+			if(i==0)	up = cr;
+			if(i==n-1)	dn = cr;
+			if(j==0)	lt = cr;
+			if(j==n-1)	rt = cr;
+
+			
+			
+			newTemp += k_const * ( a[rt] + a[lt] + a[up] + a[dn] - 4 * newTemp );
+			
+			c[i*n+j] = newTemp;
+		
+>>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
 		}
 	}
 	
@@ -157,7 +187,6 @@ void cpuKernel(const float* const a,float* c, float* temp, const int m, const in
 
 }
 
-
 //-----------------------------------------------------------------------------
 void gpuKernels(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
 
@@ -170,6 +199,7 @@ void gpuKernels(const float* const a, float* c, const int m, const int n, double
 
     HANDLE_ERROR(cudaMemcpy(ad, a, n * n * sizeof(float), cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaMemcpy(cd, a, n * n * sizeof(float), cudaMemcpyHostToDevice));
+<<<<<<< HEAD
 	// HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
 	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
 	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
@@ -182,12 +212,22 @@ void gpuKernels(const float* const a, float* c, const int m, const int n, double
 		cudaMemcpy(ad, c, n * n * sizeof(float), cudaMemcpyDeviceToHost);
     }
 	//kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
+=======
+
+	GpuTimer timer;
+    timer.Start();
+	gpuKernel(ad,cd,n,m);
+>>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
 	timer.Stop();
 	*gpu_kernel_time = timer.Elapsed();
     
 	HANDLE_ERROR(cudaMemcpy(c, cd, n * n * sizeof(float), cudaMemcpyDeviceToHost));
+<<<<<<< HEAD
 	//cudaUnbindTexture(texref);
 
+=======
+	
+>>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
     HANDLE_ERROR(cudaFree(ad));
     HANDLE_ERROR(cudaFree(cd));
 }

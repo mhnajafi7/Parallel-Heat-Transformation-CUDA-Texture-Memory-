@@ -23,6 +23,7 @@ __global__ void kernelFunc(float* newtemperature, const float* oldtemperature, c
     int bottom = index + N;
     if (row == 0) top += N;
     if (row == N-1) bottom -= N;
+<<<<<<< HEAD
 
     float r = tex1Dfetch(texref,right);
 	float l = tex1Dfetch(texref,left);
@@ -50,3 +51,28 @@ void gpuKernel(float* ad, float* cd, const unsigned int N, const unsigned int M)
     cudaUnbindTexture(texref);
 
 }
+=======
+
+    float r = tex1Dfetch(texref,right);
+	float l = tex1Dfetch(texref,left);
+	float c = tex1Dfetch(texref,index);
+    float t = tex1Dfetch(texref,top);
+    float b = tex1Dfetch(texref,bottom);
+	// using texture memory
+	 newtemperature[index] = c + k_const * (r + l + t + b - 4 * c);
+	// linear mode 
+	//newtemperature[index] = oldtemperature[index] + k_const * (oldtemperature[left] + oldtemperature[right] + oldtemperature[top] + oldtemperature[bottom]- 4 * oldtemperature[index] );
+
+}
+
+void gpuKernel(const float* ad, float* cd, const unsigned int N, const unsigned int M)
+{
+    dim3 blockSize(tl, tl);  // Adjust block size as needed
+    dim3 gridSize((N+tl-1)/tl, (N+tl-1)/tl);
+
+    cudaBindTexture(NULL, texref, ad, N * N * sizeof(float));
+	
+   	kernelFunc<<<gridSize, blockSize>>>(cd, ad, N);
+
+}
+>>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
