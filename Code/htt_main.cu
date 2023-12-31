@@ -41,12 +41,9 @@ int main(int argc, char** argv) {
 	c_serial = (float*)malloc(n*n * sizeof(float));
 	c        = (float*)malloc(n*n * sizeof(float));
 	temp     = (float*)malloc(n*n * sizeof(float));
-<<<<<<< HEAD
-	
-=======
->>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
+
 	// fill a, b matrices with random values between 20.0f and 30.0f
-	srand(0); // If you really want ranodm nubmers, change it like: srand(static_cast<unsigned int>(time(0)));
+	srand(0); 
 	fill(a, n*n);
 
 	// CPU calculations
@@ -65,29 +62,8 @@ int main(int argc, char** argv) {
 
 	printf("m=%d n=%d GPU=%g ms GPU-Kernel=%g ms mse=%g\n",
 	m, n, (t2-t1)/1000.0, gpu_kernel_time, mse);
-	/*
-	for(int i = 0; i < n ; i++){
-    	for(int j = 0; j < n ; j++){
-        printf("%.1f\t",a[i*n+j]);	
-		}
-		printf("\n");	
-	}
-	printf("*************************** \n");
+	
 
-	for(int i = 0; i < n ; i++){
-    	for(int j = 0; j < n ; j++){
-        printf("%.1f\t",c_serial[i*n+j]);	
-		}
-		printf("\n");	
-	}
-	printf("*************************** \n");
-
-	for(int i = 0; i < n ; i++){
-    	for(int j = 0; j < n ; j++){
-        printf("%.1f\t",c[i*n+j]);	
-		}
-		printf("\n");	
-	}*/
 	// free allocated memory for later use
 	free(a);
 	free(c_serial);
@@ -97,6 +73,7 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+// Function to fill the provided data array with random float values in a specific range (20.0 to 30.0)
 void fill(float* data, int size) {
 
     for (int i=0; i<size; ++i){
@@ -116,67 +93,46 @@ double calc_mse (float* data1, float* data2, int size) {
 	return mse;
 }
 //-----------------------------------------------------------------------------
-void cpuKernel(const float* const a,float* c, float* temp, const int m, const int n) { // entire matrix
+void cpuKernel(const float* const a,float* c, float* temp, const int m, const int n) { 
+	// Copy the input matrix 'a' (old temperature) to the output matrix 'c' (new temperature)
 	for(int i = 0; i < n ; i++){
 		for(int j = 0; j < n ; j++){
-<<<<<<< HEAD
 			c[i*n+j] = a[i*n+j];
-=======
-
-			float newTemp = a[i*n+j];
-			int rt,lt,cr,up,dn;
-			
-			rt = i*n+(j + 1);	//right
-			lt = i*n+(j - 1);	//left
-			cr = i*n+j;		//center
-			up = (i - 1)*n+j;	//up
-			dn = (i + 1)*n+j;	//down
-				
-			
-
-			if(i==0)	up = cr;
-			if(i==n-1)	dn = cr;
-			if(j==0)	lt = cr;
-			if(j==n-1)	rt = cr;
-
-			
-			
-			newTemp += k_const * ( a[rt] + a[lt] + a[up] + a[dn] - 4 * newTemp );
-			
-			c[i*n+j] = newTemp;
-		
->>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
 		}
 	}
 	
-	
-	for(int count = 0; count <5; count++){
+	// Perform the computation using nested loops for 'count' iterations (10 times)
 
+	for(int count = 0; count <10; count++){
+		// Iterate through each cell of the matrix
 		for(int i = 0; i < n ; i++){
 		
 			for(int j = 0; j < n ; j++){
 
 				float newt = c[i*n+j];
 				int rt,lt,cr,up,dn;
-				
+
+				// Compute indices of neighboring cells
 				rt = i*n+(j + 1);	//right
 				lt = i*n+(j - 1);	//left
 				cr = i*n+j;		//center
 				up = (i - 1)*n+j;	//up
 				dn = (i + 1)*n+j;	//down
-					
+
+				 // Check for boundary conditions and adjust neighboring indices if needed	
 				if(i==0)	up = cr;
 				if(i==n-1)	dn = cr;
 				if(j==0)	lt = cr;
 				if(j==n-1)	rt = cr;
 
+				// Perform computation based on neighboring cell values
 				newt += k_const * ( c[rt] + c[lt] + c[up] + c[dn] - 4 * c[cr] );
-				
 				temp[i*n+j] = newt;
 			
 			}
 		}
 
+		// Update the 'c' matrix (new temperature) with the values from the 'temp' matrix (temporary temperature)
 		for(int i = 0; i < n ; i++){
 			for(int j = 0; j < n ; j++){
 				c[i*n+j] = temp[i*n+j];
@@ -190,44 +146,43 @@ void cpuKernel(const float* const a,float* c, float* temp, const int m, const in
 //-----------------------------------------------------------------------------
 void gpuKernels(const float* const a, float* c, const int m, const int n, double* gpu_kernel_time) {
 
-	float* ad;
-	float* cd;
+	// Declare pointers for GPU memory
+	float* ad;	// Pointer for input matrix on GPU
+	float* cd;	// Pointer for output matrix on GPU
 
-
+	// Allocate memory on GPU for input and output matrices
     HANDLE_ERROR(cudaMalloc((void**)&ad, n * n * sizeof(float)));
     HANDLE_ERROR(cudaMalloc((void**)&cd, n * n * sizeof(float)));
 
+	// Copy input matrix 'a' (old temperature) from CPU to GPU memory
     HANDLE_ERROR(cudaMemcpy(ad, a, n * n * sizeof(float), cudaMemcpyHostToDevice));
 	HANDLE_ERROR(cudaMemcpy(cd, a, n * n * sizeof(float), cudaMemcpyHostToDevice));
-<<<<<<< HEAD
-	// HANDLE_ERROR(cudaBindTexture(NULL, texref, ad, n * sizeof(float)));
-	//dim3 dimGrid = getDimGrid(m,n); //modify this function in bmm.cu
-	//dim3 dimBlock = getDimBlock(m,n); //modify this function in bmm.cu
 
+	// Create a timer to measure kernel execution time
 	GpuTimer timer;
-    timer.Start();
-	for(int count = 0 ; count <5 ; count++){
-		gpuKernel(ad,cd,n,m);
+	double timersum=0.0;
+
+	// Perform GPU computations for 'count' iterations (10 times)
+	for(int count = 0 ; count <10 ; count++){
+
+		timer.Start();	
+		gpuKernel(ad,cd,n,m); 
+		timer.Stop();	
+
+		// Copy the output matrix 'cd' from GPU to CPU memory
 		cudaMemcpy(c, cd, n * n * sizeof(float), cudaMemcpyDeviceToHost);
-		cudaMemcpy(ad, c, n * n * sizeof(float), cudaMemcpyDeviceToHost);
+
+		// Copy the updated output matrix 'c' back to GPU memory for the next iteration
+		cudaMemcpy(ad, c, n * n * sizeof(float), cudaMemcpyHostToDevice);
+
+		timersum += timer.Elapsed();	// Accumulate the elapsed kernel execution time
     }
-	//kernelFunc<<< (16),(1024) >>>(ad , cd, n, m); //modify this function in bmm.cu
-=======
 
-	GpuTimer timer;
-    timer.Start();
-	gpuKernel(ad,cd,n,m);
->>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
-	timer.Stop();
-	*gpu_kernel_time = timer.Elapsed();
+	*gpu_kernel_time = timersum;
     
+	// Copy the final output matrix 'cd' from GPU to CPU memory
 	HANDLE_ERROR(cudaMemcpy(c, cd, n * n * sizeof(float), cudaMemcpyDeviceToHost));
-<<<<<<< HEAD
-	//cudaUnbindTexture(texref);
 
-=======
-	
->>>>>>> 86e7e9a2f48372d5e66f5a80cb6a97cfb2bc59f9
     HANDLE_ERROR(cudaFree(ad));
     HANDLE_ERROR(cudaFree(cd));
 }
