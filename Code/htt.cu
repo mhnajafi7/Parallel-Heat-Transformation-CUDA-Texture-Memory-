@@ -1,43 +1,64 @@
-//ONLY MODIFY THIS FILE!
-//YOU CAN MODIFY EVERYTHING IN THIS FILE!
-
 #include "htt.h"
 
 #define tx threadIdx.x
 #define bx blockIdx.x
+#define ty threadIdx.y
+#define by blockIdx.y
 
+#define cst 16      // Define a constant value
 
+// Define a texture memory
+texture<float,cudaTextureType1D,cudaReadModeElementType> texref;
 
+__global__ void kernelFunc(float* newtemperature, const float* oldtemperature, const unsigned int N)
+{   
+    // Calculate column and row indices based on thread and block indices
+    int col = tx + bx * cst;
+    int row = ty + by * cst;
+    int index = col + row * blockDim.x * gridDim.x;
 
-// you may define other parameters here!
-// you may define other macros here!
-// you may define other functions here!
-/*dim3 getDimGrid(const int m, const int n) {
-        dim3 dimGrid(1);
-        return dimGrid;
+    // Calculate indices for neighboring elements
+	int left = index - 1;
+    int right = index + 1;
+    if (col == 0) left++;
+    if (col == N-1) right--;
+
+    int top = index - N;
+    int bottom = index + N;
+    if (row == 0) top += N;
+    if (row == N-1) bottom -= N;
+
+    // Fetch values from texture memory for neighboring elements
+    float r = tex1Dfetch(texref,right);
+	float l = tex1Dfetch(texref,left);
+	float c = tex1Dfetch(texref,index);
+    float t = tex1Dfetch(texref,top);
+    float b = tex1Dfetch(texref,bottom);
+    
+	// Calculate the new temperature using texture memory
+	newtemperature[index] = c + k_const * (r + l + t + b - 4 * c);
+
+	/*
+    // Calculate the new temperature not texture memory
+    newtemperature[index] = oldtemperature[index] + k_const * (oldtemperature[left] + oldtemperature[right] + oldtemperature[top] + oldtemperature[bottom]- 4 * oldtemperature[index] );
+    */
+
 }
-dim3 getDimBlock(const int m, const int n) {
-        dim3 dimBlock(1024);
-        return dimBlock;
-}*/
-//-----------------------------------------------------------------------------
-__global__ void kernelFunc(const float* oldtemperature,float* newtemperature, const unsigned int N, const unsigned int M)
+
+void gpuKernel(float* ad, float* cd, const unsigned int N, const unsigned int M)
 {
 
-	int x = tx + bx * blockDim.x;
-	int offset = x;
+    // Define block size and grid size
+    dim3 blockSize(cst, cst);  // Adjust block size as needed
+    dim3 gridSize(N/cst, N/cst);
 
-	int right = offset + 1;
-	int left  = offset - 1;
-	if(x == 0)	left++;
-	if(x == N - 1)	right--;
+    // Bind the texture to the input data on GPU memory
+    cudaBindTexture(NULL, texref, ad, N * N * sizeof(float));
 
-	
-	newtemperature[offset] = oldtemperature[offset] + k_const * (oldtemperature[left] + oldtemperature[right] - 2 * oldtemperature[offset] );
-}
+    // Launch the CUDA kernel function
+    kernelFunc<<<gridSize,blockSize>>>(cd, ad, N);
 
-void gpuKernel(const float* ad,float* cd, const unsigned int N, const unsigned int M){
-
-	kernelFunc<<< (16),(1024) >>>(ad , cd, N, M);
+    // Unbind the texture after kernel execution
+    cudaUnbindTexture(texref);
 
 }
